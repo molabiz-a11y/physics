@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>River Crossing Simulation</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#1a1a2e;color:#fff;padding:10px;min-height:100vh}
+.wrap{max-width:880px;margin:0 auto}
+h1{text-align:center;color:#4da6ff;font-size:1.4em;margin-bottom:3px}
+.sub{text-align:center;color:#888;font-size:0.85em;margin-bottom:12px}
+.main{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.sim{background:#16213e;border-radius:8px;padding:8px}
+canvas{display:block;border-radius:4px}
+.leg{display:flex;gap:12px;margin-top:6px;justify-content:center;font-size:11px}
+.leg span{display:flex;align-items:center;gap:4px}
+.lc{width:18px;height:3px;border-radius:2px}
+.ctrl{background:#16213e;border-radius:8px;padding:12px;width:240px}
+.ctrl h3{color:#4da6ff;font-size:0.9em;margin-bottom:10px;border-bottom:1px solid #334;padding-bottom:6px}
+.sg{margin-bottom:10px}
+.sl{display:flex;justify-content:space-between;font-size:0.8em;margin-bottom:3px}
+.sv{color:#4da6ff;font-weight:bold}
+input[type=range]{width:100%;height:5px;border-radius:3px;background:#334;-webkit-appearance:none;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#4da6ff;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#4da6ff;cursor:pointer;border:none}
+.sll{display:flex;justify-content:space-between;font-size:0.65em;color:#666;margin-top:1px}
+.cb{font-size:0.8em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.cb input{width:14px;height:14px}
+.btns{display:flex;gap:6px;margin-bottom:12px}
+.btn{flex:1;padding:8px;border:none;border-radius:5px;font-size:0.85em;font-weight:bold;cursor:pointer}
+.btn-go{background:#22c55e;color:#fff}
+.btn-go:hover{background:#16a34a}
+.btn-go:disabled{background:#555;cursor:not-allowed}
+.btn-rs{background:#475569;color:#fff}
+.btn-rs:hover{background:#64748b}
+.th{background:#1a1a2e;border-radius:5px;padding:8px;font-size:0.75em}
+.th h4{color:#fbbf24;margin-bottom:6px}
+.th div{color:#ccc;margin-bottom:4px}
+.thv{color:#22c55e;font-weight:bold}
+.ch{background:rgba(59,130,246,0.15);border:1px solid #3b82f6;border-radius:5px;padding:8px;margin-top:8px}
+.ch h4{color:#3b82f6;font-size:0.85em;margin-bottom:6px}
+.ch ol{font-size:0.75em;padding-left:16px;color:#ccc}
+.ch li{margin-bottom:2px}
+.exp{margin-top:12px;padding:12px;background:#16213e;border-radius:8px}
+.exp h3{color:#fbbf24;margin-bottom:8px;font-size:0.9em}
+.eg{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.ei h4{font-size:0.8em;margin-bottom:3px}
+.ei p{font-size:0.75em;color:#aaa}
+.tb{color:#3b82f6}.tc{color:#06b6d4}.tg{color:#22c55e}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🚤 River Crossing Simulation</h1>
+<p class="sub">Explore relative velocity and vector addition</p>
+<div class="main">
+<div class="sim">
+<canvas id="c" width="480" height="360"></canvas>
+<div class="leg">
+<span><span class="lc" style="background:#3b82f6"></span>Boat</span>
+<span><span class="lc" style="background:#06b6d4"></span>Current</span>
+<span><span class="lc" style="background:#22c55e"></span>Resultant</span>
+<span><span class="lc" style="background:#f59e0b"></span>Path</span>
+</div>
+</div>
+<div class="ctrl">
+<h3>⚙️ Controls</h3>
+<div class="sg">
+<div class="sl"><span>Boat Speed:</span><span class="sv" id="bsV">5 m/s</span></div>
+<input type="range" id="bs" min="1" max="10" step="0.5" value="5">
+</div>
+<div class="sg">
+<div class="sl"><span>Current Speed:</span><span class="sv" id="csV" style="color:#06b6d4">3 m/s</span></div>
+<input type="range" id="cs" min="0" max="8" step="0.5" value="3">
+</div>
+<div class="sg">
+<div class="sl"><span>Heading Angle:</span><span class="sv" id="haV" style="color:#22c55e">0°</span></div>
+<input type="range" id="ha" min="-30" max="90" step="5" value="0">
+<div class="sll"><span>-30° down</span><span>90° up</span></div>
+</div>
+<div class="cb"><input type="checkbox" id="sv" checked><label for="sv">Show vectors</label></div>
+<div class="btns">
+<button class="btn btn-go" id="go">▶ Start</button>
+<button class="btn btn-rs" id="rs">↺ Reset</button>
+</div>
+<div class="th">
+<h4>📐 Theory</h4>
+<div>Zero drift angle: <span class="thv" id="ta">36.9°</span></div>
+<div>Min crossing time: <span class="thv" id="tt">56.0s</span></div>
+<div>Drift if straight: <span class="thv" id="td">168 px</span></div>
+</div>
+<div class="ch">
+<h4>🎯 Challenges</h4>
+<ol>
+<li>Cross with zero drift</li>
+<li>Land exactly on target</li>
+<li>Current > boat speed?</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="exp">
+<h3>Understanding Relative Velocity</h3>
+<div class="eg">
+<div class="ei"><h4 class="tb">Boat Velocity (blue)</h4><p>Direction you aim the boat relative to water</p></div>
+<div class="ei"><h4 class="tc">Current Velocity (cyan)</h4><p>River pushes everything downstream</p></div>
+<div class="ei"><h4 class="tg">Resultant Velocity (green)</h4><p>Actual path = boat + current vectors</p></div>
+</div>
+</div>
+</div>
+<script>
+var c=document.getElementById("c"),x=c.getContext("2d"),W=480,H=360,rT=55,rB=320,rH=rB-rT;
+var bs=5,cs=3,ha=0,run=false,bx=45,by=rB,tr=[],sv=true,st=0,af;
+function uV(){
+document.getElementById("bsV").textContent=bs+" m/s";
+document.getElementById("csV").textContent=cs+" m/s";
+document.getElementById("haV").textContent=ha+"°";
+var r=cs/bs;
+document.getElementById("ta").textContent=r<=1?(Math.asin(r)*180/Math.PI).toFixed(1)+"°":"N/A";
+document.getElementById("tt").textContent=(rH/bs).toFixed(1)+"s";
+document.getElementById("td").textContent=((cs/bs)*rH).toFixed(0)+" px";
+}
+function dr(){
+x.clearRect(0,0,W,H);
+x.fillStyle="#5D4E37";x.fillRect(0,0,W,rT);x.fillRect(0,rB,W,H-rB);
+x.fillStyle="#8B7355";x.font="bold 10px Arial";x.textAlign="center";
+x.fillText("FAR BANK (Target)",W/2,30);x.fillText("NEAR BANK (Start)",W/2,rB+22);
+x.fillStyle="#1E4D6B";x.fillRect(0,rT,W,rH);
+x.strokeStyle="#3B82F6";x.fillStyle="#3B82F6";x.globalAlpha=0.25;
+for(var i=0;i<5;i++)for(var j=0;j<7;j++){var px=30+j*65,py=rT+22+i*52;x.beginPath();x.moveTo(px,py);x.lineTo(px+20,py);x.stroke();x.beginPath();x.moveTo(px+20,py);x.lineTo(px+14,py-3);x.lineTo(px+14,py+3);x.fill();}
+x.globalAlpha=1;x.fillStyle="#60A5FA";x.font="10px Arial";x.textAlign="right";x.fillText("Current → "+cs+" m/s",W-8,rT+15);
+x.strokeStyle="#22C55E";x.lineWidth=2;x.beginPath();x.moveTo(45,rT-4);x.lineTo(45,rT+10);x.stroke();
+x.beginPath();x.arc(45,rT,6,0,Math.PI*2);x.stroke();
+x.fillStyle="#22C55E";x.font="9px Arial";x.textAlign="center";x.fillText("Target",45,rT-9);
+if(tr.length>1){x.strokeStyle="#F59E0B";x.lineWidth=2;x.setLineDash([4,2]);x.beginPath();x.moveTo(tr[0].x,tr[0].y);for(var i=1;i<tr.length;i++)x.lineTo(tr[i].x,tr[i].y);x.stroke();x.setLineDash([]);}
+x.save();x.translate(bx,by);
+x.fillStyle="#EAB308";x.strokeStyle="#CA8A04";x.lineWidth=2;x.beginPath();x.ellipse(0,0,11,5,0,0,Math.PI*2);x.fill();x.stroke();
+x.fillStyle="#8B4513";x.fillRect(-1.5,-14,3,10);
+x.fillStyle="#DC2626";x.beginPath();x.moveTo(0,-15);x.lineTo(10,-6);x.lineTo(0,-8);x.fill();
+if(sv){var sc=5.5,ar=ha*Math.PI/180,vx=bs*Math.sin(ar)*sc,vy=-bs*Math.cos(ar)*sc,cx=cs*sc;
+x.strokeStyle="#3B82F6";x.lineWidth=2.5;x.beginPath();x.moveTo(0,0);x.lineTo(vx,vy);x.stroke();x.fillStyle="#3B82F6";x.beginPath();x.arc(vx,vy,3,0,Math.PI*2);x.fill();
+x.strokeStyle="#06B6D4";x.beginPath();x.moveTo(0,0);x.lineTo(cx,0);x.stroke();x.fillStyle="#06B6D4";x.beginPath();x.moveTo(cx,0);x.lineTo(cx-6,-3);x.lineTo(cx-6,3);x.fill();
+x.strokeStyle="#22C55E";x.beginPath();x.moveTo(0,0);x.lineTo(vx+cx,vy);x.stroke();x.fillStyle="#22C55E";x.beginPath();x.arc(vx+cx,vy,4,0,Math.PI*2);x.fill();}
+x.restore();
+if(!run&&tr.length>0&&by<=rT+5){var el=((Date.now()-st)/1000).toFixed(2),df=(bx-45).toFixed(1);
+x.fillStyle="rgba(31,41,55,0.95)";x.beginPath();x.roundRect(W/2-80,130,160,60,6);x.fill();x.strokeStyle="#4B5563";x.lineWidth=1;x.stroke();
+x.fillStyle="#22C55E";x.font="bold 14px Arial";x.textAlign="center";x.fillText("Crossed!",W/2,152);
+x.fillStyle="#fff";x.font="12px Arial";x.fillText("Time: "+el+"s",W/2,168);
+x.fillStyle=Math.abs(parseFloat(df))<15?"#22C55E":"#F59E0B";x.fillText("Drift: "+df+"px"+(Math.abs(parseFloat(df))<15?" ✓":""),W/2,182);}
+}
+function an(){if(!run)return;var ar=ha*Math.PI/180,vx=bs*Math.sin(ar)+cs,vy=-bs*Math.cos(ar);tr.push({x:bx,y:by});bx+=vx*0.45;by+=vy*0.45;
+if(by<=rT){by=rT;run=false;document.getElementById("go").disabled=false;document.getElementById("go").textContent="▶ Start";}
+if(bx>W-15){run=false;document.getElementById("go").disabled=false;document.getElementById("go").textContent="▶ Start";}
+dr();if(run)af=requestAnimationFrame(an);}
+function res(){run=false;if(af)cancelAnimationFrame(af);bx=45;by=rB;tr=[];document.getElementById("go").disabled=false;document.getElementById("go").textContent="▶ Start";dr();}
+function go(){res();setTimeout(function(){run=true;st=Date.now();document.getElementById("go").disabled=true;document.getElementById("go").textContent="Running...";an();},80);}
+document.getElementById("bs").oninput=function(){bs=parseFloat(this.value);uV();if(!run)dr();};
+document.getElementById("cs").oninput=function(){cs=parseFloat(this.value);uV();if(!run)dr();};
+document.getElementById("ha").oninput=function(){ha=parseInt(this.value);uV();if(!run)dr();};
+document.getElementById("sv").onchange=function(){sv=this.checked;dr();};
+document.getElementById("go").onclick=go;
+document.getElementById("rs").onclick=res;
+uV();dr();
+</script>
+</body>
+</html>
